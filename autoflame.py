@@ -103,3 +103,5 @@ def batch_process():
 
 if __name__ == "__main__":
     batch_process()
+    print("All images processed.")
+    print(f"Processed images saved in: {OUTPUT_DIR}")
