@@ -29,7 +29,7 @@ def get_exif_info(image_path):
         exposure = str(tags.get("EXIF ExposureTime", "Unknown"))
         fnumber = str(tags.get("EXIF FNumber", "Unknown")).replace("/", ".")
 
-        return f"{make} {model} / ISO {iso} / {exposure}s / {fnumber}"
+        return f"{make} {model} / ISO {iso} / {exposure}s / F{fnumber}"
     except Exception as e:
         print(f"EXIF読み込みエラー: {e}")
         return None
