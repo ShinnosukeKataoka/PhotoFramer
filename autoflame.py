@@ -1,4 +1,5 @@
 from PIL import Image, ImageDraw, ImageFont, ExifTags
+import exifread
 import os
 
 INPUT_DIR = "input"
@@ -12,35 +13,23 @@ white_background = 50
 
 # 任意の日本語ゴシック体フォントのパスを指定
 font_path = "./NotoSansCJKjp-Regular.otf"
-font_size = 100
+font_size = 130
 
 # EXIF タグ名変換辞書
 EXIF_TAGS = {v: k for k, v in ExifTags.TAGS.items()}
 
-def get_exif_info(image):
+def get_exif_info(image_path):
     try:
-        exif = image.getexif()
-        if not exif:
-            return None
-        make = exif.get(EXIF_TAGS["Make"], "")
-        model = exif.get(EXIF_TAGS["Model"], "")
-        iso = exif.get(EXIF_TAGS["ISOSpeedRatings"], "")
-        exposure = exif.get(EXIF_TAGS["ExposureTime"], "")
-        fnumber = exif.get(EXIF_TAGS["FNumber"], "")
+        with open(image_path, "rb") as f:
+            tags = exifread.process_file(f, stop_tag="UNDEF", details=False)
 
-        # シャッタースピードを表示用に加工（1/125 など）
-        if isinstance(exposure, tuple) and len(exposure) == 2:
-            exposure_str = f"{exposure[0]}/{exposure[1]}"
-        else:
-            exposure_str = str(exposure)
+        make = str(tags.get("Image Make", "Unknown")).strip()
+        model = str(tags.get("Image Model", "Unknown")).strip()
+        iso = str(tags.get("EXIF ISOSpeedRatings", "Unknown"))
+        exposure = str(tags.get("EXIF ExposureTime", "Unknown"))
+        fnumber = str(tags.get("EXIF FNumber", "Unknown")).replace("F", "")  # ex: F16 → 16
 
-        # 絞り値表示
-        if isinstance(fnumber, tuple) and len(fnumber) == 2:
-            f_str = f"f/{round(fnumber[0] / fnumber[1], 1)}"
-        else:
-            f_str = f"f/{fnumber}"
-
-        return f"{make.strip()} {model.strip()} / ISO {iso} / {exposure_str}s / {f_str}"
+        return f"{make} {model} / ISO {iso} / {exposure}s / f{fnumber}"
     except Exception as e:
         print(f"EXIF読み込みエラー: {e}")
         return None
@@ -50,7 +39,7 @@ def process_image(image_path):
     is_jpeg = image_path.lower().endswith((".jpg", ".jpeg"))
 
     # 最大画像サイズ（枠とテキストを除く）
-    text_space = 150 if is_jpeg else 0
+    text_space = 190 if is_jpeg else 0
     max_photo_size = OUTPUT_SIZE - 2 * (white_border_thin + black_border + white_background) - text_space
     img.thumbnail((max_photo_size, max_photo_size), Image.LANCZOS)
 
@@ -68,7 +57,7 @@ def process_image(image_path):
     canvas_img.paste(img_black, (0, 0))
 
     if is_jpeg:
-        text = get_exif_info(img)
+        text = get_exif_info(image_path)
         if text:
             draw = ImageDraw.Draw(canvas_img)
             try:
