@@ -27,7 +27,7 @@ def get_exif_info(image_path):
         model = str(tags.get("Image Model", "Unknown")).strip()
         iso = str(tags.get("EXIF ISOSpeedRatings", "Unknown"))
         exposure = str(tags.get("EXIF ExposureTime", "Unknown"))
-        fnumber = str(tags.get("EXIF FNumber", "Unknown"))  
+        fnumber = str(tags.get("EXIF FNumber", "Unknown")).replace("/", ".")
 
         return f"{make} {model} / ISO {iso} / {exposure}s / {fnumber}"
     except Exception as e:
