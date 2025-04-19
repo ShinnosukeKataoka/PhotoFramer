@@ -27,14 +27,16 @@ def get_exif_info(image_path):
         model = str(tags.get("Image Model", "Unknown")).strip()
         iso = str(tags.get("EXIF ISOSpeedRatings", "Unknown"))
         exposure = str(tags.get("EXIF ExposureTime", "Unknown"))
-        fnumber = str(tags.get("EXIF FNumber", "Unknown")).replace("F", "")  # ex: F16 → 16
+        fnumber = str(tags.get("EXIF FNumber", "Unknown"))  
 
-        return f"{make} {model} / ISO {iso} / {exposure}s / f{fnumber}"
+        return f"{make} {model} / ISO {iso} / {exposure}s / {fnumber}"
     except Exception as e:
         print(f"EXIF読み込みエラー: {e}")
         return None
 
 def process_image(image_path):
+    img = Image.open(image_path)
+    exif_data = img.info.get("exif", None)
     img = Image.open(image_path).convert("RGB")
     is_jpeg = image_path.lower().endswith((".jpg", ".jpeg"))
 
@@ -80,14 +82,17 @@ def process_image(image_path):
     y = (OUTPUT_SIZE - canvas_img.height) // 2
     final.paste(canvas_img, (x, y))
 
-    return final
+    return final, exif_data
 
 def batch_process():
     for filename in os.listdir(INPUT_DIR):
         if filename.lower().endswith((".jpg", ".jpeg", ".png")):
             img_path = os.path.join(INPUT_DIR, filename)
-            result = process_image(img_path)
-            result.save(os.path.join(OUTPUT_DIR, f"framed_{filename}"))
+            result, exif_data = process_image(img_path)
+            if exif_data:
+                result.save(os.path.join(OUTPUT_DIR, f"framed_{filename}"), exif=exif_data)
+            else:
+                result.save(os.path.join(OUTPUT_DIR, f"framed_{filename}"))
             print(f"Processed: {filename}")
 
 if __name__ == "__main__":
